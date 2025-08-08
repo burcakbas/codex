@@ -1,0 +1,44 @@
+version: '3.9'
+services:
+  sql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=${SA_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P $$SA_PASSWORD -Q 'SELECT 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - sql-data:/var/opt/mssql
+    networks:
+      - demo
+  employees-api:
+    build: ./employees-api
+    depends_on:
+      sql:
+        condition: service_healthy
+    environment:
+      - ConnectionStrings__Default=${ConnectionStrings__Default}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+    ports:
+      - "5080:8080"
+    networks:
+      - demo
+  employees-ui:
+    build: ./employees-ui
+    depends_on:
+      employees-api:
+        condition: service_started
+    environment:
+      - NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
+    ports:
+      - "3000:3000"
+    networks:
+      - demo
+networks:
+  demo:
+    driver: bridge
+volumes:
+  sql-data:
