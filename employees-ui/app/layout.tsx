@@ -1,3 +1,4 @@
+'use client';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import type { Metadata } from 'next';
